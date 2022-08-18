@@ -1,6 +1,6 @@
 #pragma once
 
-#include "quickjs/quickjs.h"
+#include "quickjs.h"
 
 #include <vector>
 #include <string_view>
@@ -1067,7 +1067,7 @@ struct function
     static function * create(JSRuntime * rt, Functor&& f)
     {
         using Functor_t = std::decay_t<Functor>;
-        auto fptr = static_cast<function *>(js_malloc_rt(rt, sizeof(function) + sizeof(Functor_t)));
+        auto fptr = static_cast<function *>(qjs_malloc_rt(rt, sizeof(function) + sizeof(Functor_t)));
         if(!fptr)
             throw std::bad_alloc{};
         new(fptr) function;
@@ -1111,7 +1111,7 @@ struct js_traits<detail::function>
                     assert(fptr);
                     if(fptr->destroyer)
                         fptr->destroyer(fptr);
-                    js_free_rt(rt, fptr);
+                    qjs_free_rt(rt, fptr);
                 },
                 nullptr, // mark
                 // call
@@ -1469,7 +1469,7 @@ public:
         if(!rt)
             throw std::runtime_error{"qjs: Cannot create runtime"};
 
-        JS_SetHostUnhandledPromiseRejectionTracker(rt, promise_unhandled_rejection_tracker, NULL);
+        JS_SetHostPromiseRejectionTracker(rt, promise_unhandled_rejection_tracker, NULL);
         JS_SetModuleLoaderFunc(rt, nullptr, module_loader, nullptr);
     }
 

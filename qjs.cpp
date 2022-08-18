@@ -1,9 +1,9 @@
 #include "quickjspp.hpp"
-#include "quickjs/quickjs-libc.h"
+#include "quickjs-libc.h"
 
 #include <iostream>
 
-int main(int argc, char ** argv)
+int main(int argc, const char ** argv)
 {
     using namespace qjs;
 

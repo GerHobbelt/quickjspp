@@ -1,4 +1,4 @@
-#include "quickjs/quickjs.h"
+#include "quickjs.h"
 #include "quickjspp.hpp"
 #include <iostream>
 #include <string_view>
