@@ -74,8 +74,8 @@ int main(void)
         // see js_call_c_function
         context2.eval("mc.print_context(undefined)");
 
-		return 0;
-	}
+        return 0;
+    }
     catch(qjs::exception e)
     {
         auto exc = e.get();

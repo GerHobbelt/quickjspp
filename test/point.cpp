@@ -78,8 +78,8 @@ function main()
 main();
 )xxx", "<eval>", JS_EVAL_TYPE_MODULE);
 
-		return 0;
-	}
+        return 0;
+    }
     catch(qjs::exception)
     {
         auto exc = context.getException();

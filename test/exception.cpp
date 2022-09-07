@@ -129,7 +129,7 @@ int main(void)
             b.a_method();
         )xxx", "<eval>", JS_EVAL_TYPE_MODULE);
         assert(false);
-	}
+    }
     catch(qjs::exception)
     {
         auto exc = context.getException();
@@ -137,7 +137,7 @@ int main(void)
         if((bool)exc["stack"])
             std::cerr << (std::string)exc["stack"] << std::endl;
         assert(exc.isError() && (std::string) exc == "InternalError: method error");
-	}
+    }
 
-	return 0;
+    return 0;
 }
