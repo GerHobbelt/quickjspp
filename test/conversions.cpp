@@ -3,6 +3,9 @@
 #include <numeric>
 #include <limits>
 
+#include "monolithic_examples.h"
+
+
 template <typename T>
 void test_conv(qjs::Context& context, T x)
 {
@@ -31,7 +34,12 @@ void test_num(qjs::Context& context)
 
 }
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_conversions_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -51,6 +59,7 @@ int main()
         test_num<double>(context);
         //test_num<float>(context);
 
+		return 0;
     }
     catch(qjs::exception)
     {

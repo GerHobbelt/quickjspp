@@ -2,6 +2,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "monolithic_examples.h"
+
+
 struct A{};
 
 struct B {
@@ -14,7 +17,12 @@ struct B {
     }
 };
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_exception_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -121,7 +129,7 @@ int main()
             b.a_method();
         )xxx", "<eval>", JS_EVAL_TYPE_MODULE);
         assert(false);
-    }
+	}
     catch(qjs::exception)
     {
         auto exc = context.getException();
@@ -129,5 +137,7 @@ int main()
         if((bool)exc["stack"])
             std::cerr << (std::string)exc["stack"] << std::endl;
         assert(exc.isError() && (std::string) exc == "InternalError: method error");
-    }
+	}
+
+	return 0;
 }

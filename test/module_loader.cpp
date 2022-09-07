@@ -2,7 +2,14 @@
 #include <iostream>
 #include <string_view>
 
-int main()
+#include "monolithic_examples.h"
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_module_loader_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);

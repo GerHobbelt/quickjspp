@@ -3,6 +3,9 @@
 #include <variant>
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
 struct A {};
 
 struct B {};
@@ -10,7 +13,7 @@ struct B {};
 using var = std::variant<bool, int, double, std::string, std::vector<int>, std::shared_ptr<A>, std::shared_ptr<B>>;
 
 
-auto f(var v1, const var& /*v2*/) -> var
+static auto f(var v1, const var& /*v2*/) -> var
 {
     return std::visit([](auto&& v) -> var {
         using T = std::decay_t<decltype(v)>;
@@ -30,7 +33,7 @@ auto f(var v1, const var& /*v2*/) -> var
 using var2 = std::variant<var, std::vector<std::pair<var, var>>>;
 
 
-auto f2(var2 v2) -> var
+static auto f2(var2 v2) -> var
 {
     if(auto *v = std::get_if<var>(&v2))
         return *v;
@@ -39,7 +42,7 @@ auto f2(var2 v2) -> var
     std::abort();
 }
 
-void assert_(bool condition)
+static void assert_(bool condition)
 {
     if(!condition) throw std::runtime_error("assertion failed");
 }
@@ -61,7 +64,12 @@ static void qjs_glue(qjs::Context::Module& m)
 } // qjs_glue
 
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_variant_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -90,7 +98,9 @@ int main()
                      "my.assert(my.f2([[x,x]]) instanceof my.B);"
                      "my.assert(my.f2([[my.f(x,x),x]]) instanceof my.A);"
         );
-    }
+
+		return 0;
+	}
     catch(qjs::exception)
     {
         auto exc = context.getException();
@@ -99,5 +109,4 @@ int main()
             std::cerr << (std::string) exc["stack"] << std::endl;
         return 1;
     }
-
 }

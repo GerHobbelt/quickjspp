@@ -2,7 +2,14 @@
 #include <iostream>
 #include <cstring>
 
-int main()
+#include "monolithic_examples.h"
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_value_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -73,7 +80,9 @@ int main()
         val1["b"][2] = 2;
         JSON.stringify(val1)
         )xxx"));
-    }
+
+		return 0;
+	}
     catch(qjs::exception)
     {
         auto exc = context.getException();

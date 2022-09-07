@@ -2,6 +2,8 @@
 #include "quickjs-libc.h"
 #include <iostream>
 
+#include "monolithic_examples.h"
+
 
 #define TYPES bool, int32_t, double, std::shared_ptr<test>, const std::shared_ptr<test>&, std::string, const std::string&
 
@@ -86,7 +88,12 @@ void qjs_glue(qjs::Context::Module& m) {
             ;
 } // qjs_glue
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_class_test_main
+#endif
+
+int main(void)
 {
     JSRuntime * rt;
     JSContext * ctx;

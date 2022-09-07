@@ -1,6 +1,9 @@
 #include "quickjspp.hpp"
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
 class MyClass
 {
 public:
@@ -20,7 +23,12 @@ static void glue(qjs::Context::Module& module)
 }
 
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_multicontext_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context1(runtime);
@@ -65,7 +73,9 @@ int main()
         // will print the first context even though we call it from second
         // see js_call_c_function
         context2.eval("mc.print_context(undefined)");
-    }
+
+		return 0;
+	}
     catch(qjs::exception e)
     {
         auto exc = e.get();

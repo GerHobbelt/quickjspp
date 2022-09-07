@@ -3,6 +3,13 @@
 
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_main
+#endif
+
 int main(int argc, const char ** argv)
 {
     using namespace qjs;

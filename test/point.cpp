@@ -2,6 +2,9 @@
 #include <iostream>
 #include <cmath>
 
+#include "monolithic_examples.h"
+
+
 class Point
 {
 public:
@@ -15,7 +18,11 @@ public:
 };
 
 
-int main()
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_point_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -70,7 +77,9 @@ function main()
 
 main();
 )xxx", "<eval>", JS_EVAL_TYPE_MODULE);
-    }
+
+		return 0;
+	}
     catch(qjs::exception)
     {
         auto exc = context.getException();

@@ -2,7 +2,14 @@
 #include <iostream>
 #include <stdexcept>
 
-int main()
+#include "monolithic_examples.h"
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_jobs_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);

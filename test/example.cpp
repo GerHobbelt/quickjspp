@@ -1,6 +1,9 @@
 #include "quickjspp.hpp"
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
 class MyClass
 {
 public:
@@ -16,7 +19,12 @@ void println(qjs::rest<std::string> args) {
     std::cout << "\n";
 }
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_example_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
@@ -53,6 +61,8 @@ int main()
         auto lambda = context.eval("x=>my.println(x.member_function('lambda'))").as<std::function<void(qjs::shared_ptr<MyClass>)>>();
         auto v3 = qjs::make_shared<MyClass>(context.ctx, std::vector{1,2,3});
         lambda(v3);
+
+		return 0;
     }
     catch(qjs::exception)
     {

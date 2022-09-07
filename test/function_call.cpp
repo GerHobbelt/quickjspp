@@ -3,7 +3,10 @@
 #include <iostream>
 #include <string_view>
 
-int test_not_enough_arguments(qjs::Context & ctx) {
+#include "monolithic_examples.h"
+
+
+static int test_not_enough_arguments(qjs::Context & ctx) {
     std::string msg;
 
     ctx.global()["test_fcn"] = [](int a, int b, int c) {
@@ -46,7 +49,7 @@ int test_not_enough_arguments(qjs::Context & ctx) {
     return 0;
 }
 
-int test_call_with_rest_parameters(qjs::Context & ctx) {
+static int test_call_with_rest_parameters(qjs::Context & ctx) {
     ctx.global()["test_fcn_rest"] = [](int a, qjs::rest<int> args) {
         for (auto arg : args) {
             a += arg;
@@ -103,7 +106,12 @@ int test_call_with_rest_parameters(qjs::Context & ctx) {
     return 0;
 }
 
-int main()
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_function_call_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);

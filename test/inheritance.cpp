@@ -1,6 +1,9 @@
 #include "quickjspp.hpp"
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
 struct A {
     int a;
     A(int a) : a(a) {}
@@ -77,7 +80,11 @@ struct C : public A, public B, public H {
 
 
 
-int main()
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_inheritance_test_main
+#endif
+
+int main(void)
 {
     qjs::Runtime runtime;
     qjs::Context context(runtime);
