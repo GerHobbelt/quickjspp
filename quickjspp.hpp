@@ -908,7 +908,7 @@ struct js_traits<std::shared_ptr<T>>
                     assert(pptr);
                     const T * ptr = pptr->get();
                     assert(ptr);
-                    for(Value T::* member : markOffsets)
+                    for(auto member : markOffsets)
                     {
                         JS_MarkValue(rt, (*ptr.*member).v, mark_func);
                     }
@@ -1061,7 +1061,10 @@ struct function
 
     void (* destroyer)(function * self) = nullptr;
 
+#pragma warning(push)
+#pragma warning(disable: 4200)
     alignas(std::max_align_t) char functor[];
+#pragma warning(pop)
 
     template <typename Functor>
     static function * create(JSRuntime * rt, Functor&& f)
