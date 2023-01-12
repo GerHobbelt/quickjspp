@@ -185,5 +185,4 @@ int main(void)
     js_std_free_handlers(rt);
 
     return 0;
-
 }

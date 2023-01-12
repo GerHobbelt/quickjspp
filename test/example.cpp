@@ -14,7 +14,7 @@ public:
     std::string member_function(const std::string& s) { return "Hello, " + s; }
 };
 
-void println(qjs::rest<std::string> args) {
+static void println(qjs::rest<std::string> args) {
     for (auto const & arg : args) std::cout << arg << " ";
     std::cout << "\n";
 }

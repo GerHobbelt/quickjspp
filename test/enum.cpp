@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "quickjspp.hpp"
 
+#include "monolithic_examples.h"
+
+
 enum TestEnum : int64_t{
     TestEnum_A,
     TestEnum_B = (1ll << 51),
@@ -17,10 +20,15 @@ public:
     }
 };
 
-void println(qjs::rest<std::string> args) {
+static void println(qjs::rest<std::string> args) {
     for (auto const &arg: args) std::cout << arg << " ";
     std::cout << "\n";
 }
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main      qjscpp_enum_test_main
+#endif
 
 int main() {
     qjs::Runtime runtime;
@@ -49,4 +57,5 @@ int main() {
         if ((bool) exc["stack"]) std::cerr << (std::string) exc["stack"] << std::endl;
         return 1;
     }
+	return 0;
 }

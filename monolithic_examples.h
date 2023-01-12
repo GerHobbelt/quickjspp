@@ -8,8 +8,10 @@ extern "C" {
 #endif
 
 extern int qjscpp_main(int argc, const char ** argv);
+
 extern int qjscpp_class_test_main(void);
 extern int qjscpp_conversions_test_main(void);
+extern int qjscpp_enum_test_main(void);
 extern int qjscpp_example_main(void);
 extern int qjscpp_exception_test_main(void);
 extern int qjscpp_function_call_test_main(void);
