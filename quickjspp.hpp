@@ -139,7 +139,7 @@ struct js_traits<bool>
 
     static JSValue wrap(JSContext * ctx, bool i) noexcept
     {
-        return JS_NewBool(ctx, i);
+        return JS_NewBool(ctx, static_cast<JS_BOOL>(i));
     }
 };
 
@@ -1573,7 +1573,6 @@ public:
             JS_AddModuleExport(ctx, m, name);
             return *this;
         }
-
 
         template <typename T>
         Module& add(const char * name, T&& value)
