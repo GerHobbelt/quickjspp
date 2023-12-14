@@ -128,7 +128,10 @@ int main(void)
         context.eval(str, "<input>", JS_EVAL_TYPE_MODULE);
 
 
-        context.global()["assert"] = [](bool t) { if(!t) std::exit(2); };
+        context.global()["assert"] = [](bool t) { 
+			if(!t) 
+				std::exit(2); 
+		};
 
 
         auto xxx = context.eval("\"use strict\";"
@@ -172,9 +175,9 @@ int main(void)
     catch(exception)
     {
         auto exc = context.getException();
-        std::cerr << (exc.isError() ? "Error: " : "Throw: ") << (std::string)exc << std::endl;
+        std::cerr << (exc.isError() ? "Error: " : "Throw: ") << std::string(exc) << std::endl;
         if((bool)exc["stack"])
-            std::cerr << (std::string)exc["stack"] << std::endl;
+            std::cerr << std::string(exc["stack"]) << std::endl;
 
         js_std_free_handlers(rt);
         return 1;
