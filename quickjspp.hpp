@@ -178,7 +178,9 @@ struct js_traits<double>
 };
 
 namespace detail {
-/** Fake std::string_view which frees the string on destruction.
+
+/** 
+* Fake std::string_view which frees the string on destruction.
 */
 class js_string : public std::string_view
 {
@@ -207,6 +209,7 @@ public:
             JS_FreeCString(ctx, this->data());
     }
 };
+
 } // namespace detail
 
 /** Conversion traits from std::string_view and to detail::js_string. */
