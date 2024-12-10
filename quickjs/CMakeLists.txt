@@ -1,6 +1,15 @@
 project(quickjs LANGUAGES C)
 
+message(STATUS "quickjs CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+message(STATUS "quickjs CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+
 if(MSVC)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libquickjs64.dll" "${CMAKE_BINARY_DIR}/libquickjs64.dll" COPYONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libquickjs32.dll" "${CMAKE_BINARY_DIR}/libquickjs32.dll" COPYONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libquickjs64.a" "${CMAKE_BINARY_DIR}/libquickjs64.a" COPYONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libquickjs32.a" "${CMAKE_BINARY_DIR}/libquickjs32.a" COPYONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.def" "${CMAKE_BINARY_DIR}/libquickjs.def" COPYONLY)
+
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(arch 64)
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)

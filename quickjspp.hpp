@@ -782,10 +782,6 @@ struct js_traits<ctor_wrapper<T, Args...>>
                 std::shared_ptr<T> ptr = std::apply(std::make_shared<T, Args...>, detail::unwrap_args<Args...>(ctx, argc, argv));
                 JS_SetOpaque(jsobj, new std::shared_ptr<T>(std::move(ptr)));
 
-                #ifdef DEUS_DEBUG
-                std::cout << "CONSTRUCT JS_NewObjectProtoClass\n";
-                #endif
-
                 // If memory is managed by external source
                 const bool isMemoryManaged = true; // TODO: define in class
                 if (isMemoryManaged) {

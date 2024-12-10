@@ -30,7 +30,7 @@ jobs:
         i686-w64-mingw32-gcc -shared -static quickjs/*.c bin/libquickjs.def -DCONFIG_VERSION=\"$(cat quickjs/VERSION)\" -DCONFIG_BIGNUM -D_GNU_SOURCE=1 -o bin/libquickjs32.dll  -Wl,--out-implib,bin/libquickjs32.a -pthread -s ${{ matrix.cflags }}
         x86_64-w64-mingw32-gcc -shared -static quickjs/*.c bin/libquickjs.def -DCONFIG_VERSION=\"$(cat quickjs/VERSION)\" -DCONFIG_BIGNUM -D_GNU_SOURCE=1 -o bin/libquickjs64.dll  -Wl,--out-implib,bin/libquickjs64.a -pthread -s ${{ matrix.cflags }}
       shell: bash
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: dlls ${{matrix.cflags}}
         path: bin
