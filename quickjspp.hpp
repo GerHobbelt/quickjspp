@@ -809,6 +809,76 @@ inline JSValue GetPropertyPrototype(JSContext * ctx, JSValueConst this_value)
 }
 } // namespace detail
 
+/** Conversion to JSValue for ctor_wrapper. */
+template <class T, typename... Args>
+struct js_traits<ctor_wrapper<T, Args...>>
+{
+    static JSValue wrap(JSContext * ctx, ctor_wrapper<T, Args...> cw) noexcept
+    {
+        return JS_NewCFunction2(ctx, [](JSContext * ctx, JSValueConst this_value, int argc,
+                                        JSValueConst * argv) noexcept -> JSValue {
+
+            if(js_traits<std::shared_ptr<T>>::QJSClassId == 0) // not registered
+            {
+#if defined(__cpp_rtti)
+                // automatically register class on first use (no prototype)
+                js_traits<std::shared_ptr<T>>::register_class(ctx, typeid(T).name());
+#else
+                JS_ThrowTypeError(ctx, "quickjspp ctor_wrapper<T>::wrap: Class is not registered");
+                return JS_EXCEPTION;
+#endif
+            }
+
+            auto proto = detail::GetPropertyPrototype(ctx, this_value);
+            if(JS_IsException(proto))
+                return proto;
+            auto jsobj = JS_NewObjectProtoClass(ctx, proto, js_traits<std::shared_ptr<T>>::QJSClassId);
+
+            JS_FreeValue(ctx, proto);
+            if(JS_IsException(jsobj))
+                return jsobj;
+
+            try
+            {
+                std::shared_ptr<T> ptr = std::apply(std::make_shared<T, Args...>, detail::unwrap_args<Args...>(ctx, argc, argv));
+                JS_SetOpaque(jsobj, new std::shared_ptr<T>(std::move(ptr)));
+
+                #ifdef DEUS_DEBUG
+                std::cout << "CONSTRUCT JS_NewObjectProtoClass\n";
+                #endif
+
+                // If memory is managed by external source
+                const bool isMemoryManaged = true; // TODO: define in class
+                if (isMemoryManaged) {
+              ManagedValues.push_back(JS_DupValue(ctx, jsobj));
+                }
+
+                return jsobj;
+            }
+            catch (exception)
+            {
+                JS_FreeValue(ctx, jsobj);
+                return JS_EXCEPTION;
+            }
+            catch (std::exception const & err)
+            {
+                JS_FreeValue(ctx, jsobj);
+                JS_ThrowInternalError(ctx, "%s", err.what());
+                return JS_EXCEPTION;
+            }
+            catch (...)
+            {
+                JS_FreeValue(ctx, jsobj);
+                JS_ThrowInternalError(ctx, "Unknown error");
+                return JS_EXCEPTION;
+            }
+
+            // return detail::wrap_call<std::shared_ptr<T>, Args...>(ctx, std::make_shared<T, Args...>, argv);
+        }, cw.name, sizeof...(Args), JS_CFUNC_constructor, 0);
+    }
+};
+
+
 /** Conversions for std::shared_ptr<T>. Empty shared_ptr corresponds to JS_NULL.
  * T should be registered to a context before conversions.
  * @tparam T class type
@@ -1947,72 +2017,6 @@ public:
         assert(ptr);
         return *static_cast<Context *>(ptr);
     }
-};
-
-
-
-/** Conversion to JSValue for ctor_wrapper. */
-template <class T, typename... Args>
-struct js_traits<ctor_wrapper<T, Args...>> {
-  static JSValue wrap(JSContext *ctx, ctor_wrapper<T, Args...> cw) noexcept {
-    return JS_NewCFunction2(
-        ctx,
-        [](JSContext *ctx, JSValueConst this_value, int argc,
-           JSValueConst *argv) noexcept -> JSValue {
-          if (js_traits<std::shared_ptr<T>>::QJSClassId == 0) // not registered
-          {
-#if defined(__cpp_rtti)
-            // automatically register class on first use (no prototype)
-            js_traits<std::shared_ptr<T>>::register_class(ctx,
-                                                          typeid(T).name());
-#else
-            JS_ThrowTypeError(
-                ctx,
-                "quickjspp ctor_wrapper<T>::wrap: Class is not registered");
-            return JS_EXCEPTION;
-#endif
-          }
-
-          auto proto = detail::GetPropertyPrototype(ctx, this_value);
-          if (JS_IsException(proto))
-            return proto;
-          auto jsobj = JS_NewObjectProtoClass(
-              ctx, proto, js_traits<std::shared_ptr<T>>::QJSClassId);
-          JS_FreeValue(ctx, proto);
-          if (JS_IsException(jsobj))
-            return jsobj;
-
-          try {
-            std::shared_ptr<T> ptr =
-                std::apply(std::make_shared<T, Args...>,
-                           detail::unwrap_args<Args...>(ctx, argc, argv));
-            JS_SetOpaque(jsobj, new std::shared_ptr<T>(std::move(ptr)));
-
-            // If memory is managed by external source, we dont want the GC to delete the actual object
-            const bool isMemoryManaged = true; // TODO: define in class, things like vec3 we can cleanup
-            if (isMemoryManaged) {
-              ManagedValues.push_back(JS_DupValue(ctx, jsobj));
-            }
-
-            return jsobj;
-          } catch (exception) {
-            JS_FreeValue(ctx, jsobj);
-            return JS_EXCEPTION;
-          } catch (std::exception const &err) {
-            JS_FreeValue(ctx, jsobj);
-            JS_ThrowInternalError(ctx, "%s", err.what());
-            return JS_EXCEPTION;
-          } catch (...) {
-            JS_FreeValue(ctx, jsobj);
-            JS_ThrowInternalError(ctx, "Unknown error");
-            return JS_EXCEPTION;
-          }
-
-          // return detail::wrap_call<std::shared_ptr<T>, Args...>(ctx,
-          // std::make_shared<T, Args...>, argv);
-        },
-        cw.name, sizeof...(Args), JS_CFUNC_constructor, 0);
-  }
 };
 
 /** Conversion traits for Value.
