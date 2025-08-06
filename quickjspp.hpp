@@ -898,11 +898,11 @@ struct js_traits<std::shared_ptr<T>>
     static void register_class(JSContext * ctx, const char * name, JSValue proto = JS_NULL,
                                JSClassCall * call = nullptr, JSClassExoticMethods * exotic = nullptr)
     {
+        auto rt = JS_GetRuntime(ctx);
         if(QJSClassId == 0)
         {
-      JS_NewClassID(JS_GetRuntime(ctx), &QJSClassId);
+            JS_NewClassID(rt, &QJSClassId);
         }
-        auto rt = JS_GetRuntime(ctx);
         if(!JS_IsRegisteredClass(rt, QJSClassId))
         {
             JSClassGCMark * marker = nullptr;
@@ -1103,11 +1103,11 @@ struct js_traits<detail::function>
     // TODO: replace ctx with rt
     static void register_class(JSContext * ctx, const char * name)
     {
+        auto rt = JS_GetRuntime(ctx);
         if(QJSClassId == 0)
         {
-      JS_NewClassID(JS_GetRuntime(ctx), &QJSClassId);
+            JS_NewClassID(rt, &QJSClassId);
         }
-        auto rt = JS_GetRuntime(ctx);
         if(JS_IsRegisteredClass(rt, QJSClassId))
             return;
         JSClassDef def{
@@ -1305,6 +1305,7 @@ public:
   }
 
     Value(JSValue&& v) noexcept : v(std::move(v)), ctx(nullptr) {}
+    Value(JSContext * ctx, JSValue v) noexcept : v(std::move(v)), ctx(ctx) {}
 
     Value(const Value& rhs) noexcept
     {
@@ -1617,6 +1618,12 @@ public:
             return add(name, js_traits<T>::wrap(ctx, std::forward<T>(value)));
         }
 
+        template <typename T>
+        Module& addPtr(const char* name, T value)
+        {
+            return add(name, js_traits<T>::wrap(ctx, value));
+        }
+
         Module(const Module&) = delete;
 
         Module(Module&&) = default;
@@ -1646,7 +1653,7 @@ public:
         }
 
         // class register wrapper
-    private:
+    public:
         /** Helper class to register class members and constructors.
          * See fun, constructor.
          * Actual registration occurs at object destruction.
@@ -1689,8 +1696,7 @@ public:
             template <auto F>
             class_registrar& fun(const char * name)
             {
-        js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<F>(
-            context.ctx);
+                js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<F>(context.ctx);
                 prototype.add<F>(name);
                 return *this;
             }
@@ -1704,8 +1710,7 @@ public:
             class_registrar& static_fun(const char * name)
             {
                 assert(!JS_IsNull(ctor.v) && "You should call .constructor before .static_fun");
-        js_traits<qjs::shared_ptr<T>>::template ensureCanCastToBase<F>(
-            context.ctx);
+                js_traits<qjs::shared_ptr<T>>::template ensureCanCastToBase<F>(context.ctx);
                 ctor.add<F>(name);
                 return *this;
             }
@@ -1717,10 +1722,8 @@ public:
             template <auto FGet, auto FSet = nullptr>
             class_registrar& property(const char * name)
             {
-        js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<FGet>(
-            context.ctx);
-        js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<FSet>(
-            context.ctx);
+                js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<FGet>(context.ctx);
+                js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<FSet>(context.ctx);
                 if constexpr (std::is_same_v<decltype(FSet), std::nullptr_t>)
                     prototype.add_getter<FGet>(name);
                 else
@@ -1751,8 +1754,7 @@ public:
             {
                 static_assert(!std::is_same_v<B, T>, "Type cannot be a base of itself");
                 assert(js_traits<std::shared_ptr<B>>::QJSClassId && "base class is not registered");
-        js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<B>(
-            context.ctx);
+                js_traits<std::shared_ptr<T>>::template ensureCanCastToBase<B>(context.ctx);
                 auto base_proto = JS_GetClassProto(context.ctx, js_traits<std::shared_ptr<B>>::QJSClassId);
                 JS_BOOL err = JS_SetPrototype(context.ctx, prototype.v, base_proto);
                 JS_FreeValue(context.ctx, base_proto);
@@ -1934,6 +1936,7 @@ public:
     {
         assert(buffer.data()[buffer.size()] == '\0' &&
                "fromJSON buffer is not null-terminated"); // JS_ParseJSON requirement
+        //return Value{ctx, JS_ParseJSON2(ctx, buffer.data(), buffer.size(), filename, flags)}; // JSON superset
     return Value{weakFromContext(ctx), JS_ParseJSON(ctx, buffer.data(), buffer.size(), filename, flags)};
     }
 
@@ -2057,7 +2060,7 @@ struct js_traits<std::function<R(Args...)>, int>
         }
         else
         {
-            return [jsfun_obj = Value{ctx, JS_DupValue(ctx, fun_obj)}](Args ... args) -> R {
+            return [jsfun_obj = Value{ctx, JS_DupValue(ctx, fun_obj)}](Args&& ... args) -> R {
                 const int argc = sizeof...(Args);
                 JSValue argv[argc];
                 detail::wrap_args(jsfun_obj.ctx, argv, std::forward<Args>(args)...);
