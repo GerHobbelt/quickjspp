@@ -38,10 +38,12 @@ class Value;
 /** Exception type.
  * Indicates that exception has occured in JS context.
  */
-class exception {
-    JSContext * ctx;
+class exception : public std::runtime_error {
+  JSContext *ctx;
+  inline std::string message(JSContext *ctx = nullptr) const;
+
 public:
-    exception(JSContext * ctx) : ctx(ctx) {}
+  exception(JSContext *ctx) : std::runtime_error(message(ctx)), ctx(ctx) {}
     Context & context() const;
 
     /// Clears and returns the occurred exception.
@@ -175,6 +177,24 @@ struct js_traits<double>
     {
         return JS_NewFloat64(ctx, i);
     }
+};
+
+template <> 
+struct js_traits<float> 
+{
+  /// @throws exception
+  static float unwrap(JSContext *ctx, JSValueConst v) 
+  {
+    double r;
+    if (JS_ToFloat64(ctx, &r, v))
+      throw exception{ctx};
+    return static_cast<float>(r);
+  }
+
+  static JSValue wrap(JSContext *ctx, float i) noexcept 
+  {
+    return JS_NewFloat64(ctx, static_cast<double>(i));
+  }
 };
 
 namespace detail {
@@ -909,11 +929,11 @@ struct js_traits<std::shared_ptr<T>>
     static void register_class(JSContext * ctx, const char * name, JSValue proto = JS_NULL,
                                JSClassCall * call = nullptr, JSClassExoticMethods * exotic = nullptr)
     {
+        auto rt = JS_GetRuntime(ctx);
         if(QJSClassId == 0)
         {
             JS_NewClassID(&QJSClassId);
         }
-        auto rt = JS_GetRuntime(ctx);
         if(!JS_IsRegisteredClass(rt, QJSClassId))
         {
             JSClassGCMark * marker = nullptr;
@@ -1106,7 +1126,7 @@ struct function
 };
 
 static_assert(std::is_trivially_destructible_v<function>);
-}
+} // namespace detail
 
 template <>
 struct js_traits<detail::function>
@@ -1116,11 +1136,11 @@ struct js_traits<detail::function>
     // TODO: replace ctx with rt
     static void register_class(JSContext * ctx, const char * name)
     {
+        auto rt = JS_GetRuntime(ctx);
         if(QJSClassId == 0)
         {
             JS_NewClassID(&QJSClassId);
         }
-        auto rt = JS_GetRuntime(ctx);
         if(JS_IsRegisteredClass(rt, QJSClassId))
             return;
         JSClassDef def{
@@ -1350,7 +1370,8 @@ public:
 
     ~Value()
     {
-        if(ctx) JS_FreeValue(ctx, v);
+    if (ctx)
+      JS_FreeValue(ctx, v);
     }
 
     bool isError() const { return JS_IsError(ctx, v); }
@@ -1525,9 +1546,11 @@ namespace detail {
 
 inline std::optional<std::string> readFile(std::filesystem::path const & filepath)
 {
-    if (!std::filesystem::exists(filepath)) return std::nullopt;
+    if (!std::filesystem::exists(filepath))
+        return std::nullopt;
     std::ifstream f(filepath, std::ios::in | std::ios::binary);
-    if (!f.is_open()) return std::nullopt;
+    if (!f.is_open())
+        return std::nullopt;
     std::stringstream sstream;
     sstream << f.rdbuf();
     return sstream.str();
@@ -1535,7 +1558,8 @@ inline std::optional<std::string> readFile(std::filesystem::path const & filepat
 
 inline std::string toUri(std::string_view filename) {
     auto fname = std::string{filename};
-    if (fname.find("://") < fname.find("/")) return fname;
+    if (fname.find("://") < fname.find("/"))
+        return fname;
 
     auto fpath = std::filesystem::path(fname);
     if (!fpath.is_absolute()) {
@@ -1546,7 +1570,7 @@ inline std::string toUri(std::string_view filename) {
     return fname;
 }
 
-}
+} // namespace detail
 
 /** Wrapper over JSContext * ctx
  * Calls JS_SetContextOpaque(ctx, this); on construction and JS_FreeContext on destruction
@@ -2130,17 +2154,16 @@ struct js_traits<std::optional<T>>
     {
         try
         {
-            if(JS_IsNull(v))
-                return std::nullopt;
-            return js_traits<std::decay_t<T>>::unwrap(ctx, v);
-        }
-        catch(exception)
-        {
-            // ignore and clear exception
-            JS_FreeValue(ctx, JS_GetException(ctx));
-        }
+      if (JS_IsNull(v) || JS_IsUndefined(v))
         return std::nullopt;
+      return js_traits<std::decay_t<T>>::unwrap(ctx, v);
+    } catch (std::exception &e) {
+	  (void)e;
+      // ignore and clear exception
+      JS_FreeValue(ctx, JS_GetException(ctx));
     }
+    return std::nullopt;
+  }
 };
 
 
@@ -2150,7 +2173,7 @@ property_proxy<Key>::operator Value() const
 {
     return as<Value>();
 }
-}
+} // namespace detail
 
 template <typename Function>
 void Context::enqueueJob(Function && job) {
@@ -2255,6 +2278,17 @@ inline Context * Runtime::executePendingJob() {
         throw exception{ctx};
     }
     return &Context::get(ctx);
+}
+
+inline std::string exception::message(JSContext *ctx) const {
+  auto &js = Context::get(ctx ? ctx : this->ctx);
+  auto exc = js.getException();
+
+  std::string message = (std::string)exc;
+  if ((bool)exc["stack"])
+    message += "\n" + (std::string)exc["stack"];
+
+  return message;
 }
 
 } // namespace qjs

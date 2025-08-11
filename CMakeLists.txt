@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.13)
 project(quickjspp LANGUAGES CXX)
 
-#set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 add_subdirectory(quickjs)
 
 add_library(quickjspp INTERFACE)
-target_link_libraries(quickjspp INTERFACE quickjs)
+target_link_libraries(quickjspp INTERFACE qjs)
 target_compile_features(quickjspp INTERFACE cxx_std_20)
 target_include_directories(quickjspp INTERFACE .)
 set_target_properties(quickjspp PROPERTIES PUBLIC_HEADER quickjspp.hpp)
@@ -30,4 +30,4 @@ if(BUILD_TESTING)
     add_subdirectory(test)
 endif()
 
-install(TARGETS quickjspp qjs)
+install(TARGETS quickjspp)
